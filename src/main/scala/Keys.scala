@@ -1,3 +1,5 @@
+package com.twitterProject
+
 trait Keys {
   val apiKey = "odXvyafpWSQlGtAlVX7tybp7O"
   val apiSecret = "gaKCGYnarfHZpEwHHF1hVMSColyAVMiigE2pBBomwLgMhVdbeH"
