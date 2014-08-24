@@ -31,8 +31,8 @@ class StreamStorageActor extends Actor {
   def receive = {
     case IncomingTweet => incrementTotal
     case Recieved => future(totalTweets).onComplete {
-      case Success(x) => print(x)
-      case Failure(x) => print(x)
+      case Success(x) => println(x + "success")
+      case Failure(x) => println(x + "fail")
     }
   }
 

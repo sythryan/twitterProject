@@ -14,13 +14,13 @@ object StreamCapture extends App
   val token = "1149304981-5lk07HSh0p3autlERVoaQS81SKZV4Rwo2qAohTR"
   val tokenSecret = "Wzm59pt6Oh0ZaaLVQWQFdBxTnmx71ndcvfBeM5FiZzD5m"
 
-  val nrOfInstances = 5
+  val nrOfInstances = 4
 
   val streamer = ActorSystem("streamer")
   val streamStorage = streamer.actorOf(Props[StreamStorageActor])
-  val router = streamer.actorOf(Props[StreamStorageActor].withRouter(
-    RoundRobinRouter(nrOfInstances))
-  )
+  val router = streamer.actorOf(Props(new TweetProcessingActor(streamStorage)).withRouter(
+    RoundRobinRouter(nrOfInstances)
+  ))
   val theStream = new TwitterStreamFactory(
     new twitter4j.conf.ConfigurationBuilder()
     .setOAuthConsumerKey(apiKey)
