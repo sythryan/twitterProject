@@ -19,27 +19,41 @@ case object Recieved
 case object IncomingTweet
 
 class StreamStorageActor extends Actor {
+  private[this] var bigTotalTweets = 0
   private[this] var totalTweets = 0
-  private[this] var averageTweets = 0
-  private[this] var topEmojis = ""
+  private[this] var topEmojis = List("")
   private[this] var percentEmojis = 0
-  private[this] var topHashtags = ""
+  private[this] var topHashtags = List("")
   private[this] var percentUrlTweets = 0
   private[this] var percentPhotoTweets = 0
   private[this] var topDomains = List("")
 
   def receive = {
-    case IncomingTweet => incrementTotal
-    case Recieved => future(totalTweets).onComplete {
-      case Success(x) => println(x + "success")
-      case Failure(x) => println(x + "fail")
+    case IncomingTweet => update
+    case Recieved => future(
+      "Total: " + bigTotalTweets + totalTweets + "\n" +
+      "Average hour/minute/second: " + tweetAvgHour + "/" + tweetAvgMinute + "/" + tweetAvgSecond + "\n"
+    ).onComplete {
+      case Success(x) => println(x)
+      case Failure(x) => println(x)
     }
   }
 
-  def incrementTotal: Unit = totalTweets += 1 
+  val startTime = System.currentTimeMillis / 1000
+  def currentTime = System.currentTimeMillis / 1000
+  def tweetAvgSecond = totalTweets / (currentTime - startTime)
+  def tweetAvgMinute = (totalTweets / ((currentTime - startTime) / 60.0)).toInt
+  def tweetAvgHour   = (totalTweets / ((currentTime - startTime) / 3600.0)).toInt
+
+  private[this] def update: Unit = {
+    if (totalTweets > 2100000000) {
+      totalTweets -= 2100000000
+      bigTotalTweets += 1
+    } else {totalTweets += 1}
+  }
 }
 
-class TweetProcessingActor (streamStorageActor: ActorRef) extends Actor{
+class TweetProcessingActor(streamStorageActor: ActorRef) extends Actor{
   def receive = {
     case e: Status => streamStorageActor ! IncomingTweet
   }
