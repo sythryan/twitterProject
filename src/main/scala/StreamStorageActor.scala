@@ -1,6 +1,10 @@
 package com.twitterProject
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorRef}
+import twitter4j._
+import scala.concurrent.future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
 // ● Total number of tweets received
 // ● Average tweets per hour/minute/second
@@ -11,17 +15,32 @@ import akka.actor.Actor
 // ● Percent of tweets that contain a photo url (pic.twitter.com or instagram)
 // ● Top domains of urls in tweets
 
+case object Recieved
+case object IncomingTweet
 
 class StreamStorageActor extends Actor {
-  case class TweetValues(
-    var totalTweets: Int,
-    var averageTweets: Int,
-    var topEmojis: String,
-    var percentEmojis: Int,
-    var topHashtags: String,
-    var percentUrlTweets: Int,
-    var percentPhotoTweets: Int,
-    var topDomains: List[String]
-  )
-  val TweetInfo = new TweetValues(0,0,"",0,"",0,0,List())
+  private[this] var totalTweets = 0
+  private[this] var averageTweets = 0
+  private[this] var topEmojis = ""
+  private[this] var percentEmojis = 0
+  private[this] var topHashtags = ""
+  private[this] var percentUrlTweets = 0
+  private[this] var percentPhotoTweets = 0
+  private[this] var topDomains = List("")
+
+  def receive = {
+    case IncomingTweet => incrementTotal
+    case Recieved => future(totalTweets).onComplete {
+      case Success(x) => print(x)
+      case Failure(x) => print(x)
+    }
+  }
+
+  def incrementTotal: Unit = totalTweets += 1 
+}
+
+class TweetProcessingActor (streamStorageActor: ActorRef) extends Actor{
+  def receive = {
+    case e: Status => streamStorageActor ! IncomingTweet
+  }
 }
