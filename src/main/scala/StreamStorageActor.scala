@@ -16,10 +16,14 @@ import scala.util.{Failure, Success}
 // ● Top domains of urls in tweets
 
 case object Recieved
-case object IncomingTweet
+case class IncomingTweet(status: Status)
+
+class Extractor(status: Status) {
+  val text = status.getText
+}
 
 class StreamStorageActor extends Actor {
-  private[this] var bigTotalTweets = 0
+  private[this] var bigTotalTweets = 0 // may not be needed
   private[this] var totalTweets = 0
   private[this] var topEmojis = List("")
   private[this] var percentEmojis = 0
@@ -29,7 +33,7 @@ class StreamStorageActor extends Actor {
   private[this] var topDomains = List("")
 
   def receive = {
-    case IncomingTweet => update
+    case e: IncomingTweet => update(e.status)
     case Recieved => future(
       "Total: " + bigTotalTweets + totalTweets + "\n" +
       "Average hour/minute/second: " + tweetAvgHour + "/" + tweetAvgMinute + "/" + tweetAvgSecond + "\n"
@@ -40,21 +44,22 @@ class StreamStorageActor extends Actor {
   }
 
   val startTime = System.currentTimeMillis / 1000
-  def currentTime = System.currentTimeMillis / 1000
-  def tweetAvgSecond = totalTweets / (currentTime - startTime)
-  def tweetAvgMinute = (totalTweets / ((currentTime - startTime) / 60.0)).toInt
-  def tweetAvgHour   = (totalTweets / ((currentTime - startTime) / 3600.0)).toInt
+  def runLength = System.currentTimeMillis / 1000 - startTime
+  def tweetAvgSecond = totalTweets / runLength
+  def tweetAvgMinute = (totalTweets / (runLength / 60.0)).toInt
+  def tweetAvgHour   = (totalTweets / (runLength / 3600.0)).toInt
 
-  private[this] def update: Unit = {
+  private[this] def update(status: Status): Unit = {
     if (totalTweets > 2100000000) {
       totalTweets -= 2100000000
       bigTotalTweets += 1
     } else {totalTweets += 1}
+    println(status.getText)
   }
 }
 
 class TweetProcessingActor(streamStorageActor: ActorRef) extends Actor{
   def receive = {
-    case e: Status => streamStorageActor ! IncomingTweet
+    case e: Status => streamStorageActor ! IncomingTweet(e)
   }
 }
