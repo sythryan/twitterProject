@@ -56,6 +56,11 @@ class StreamStorageActor extends Actor {
     } else {totalTweets += 1}
     println(status.getText)
   }
+
+  private[this] def extractURLs(status: Status): List[String] = {
+    val uRLs = status.getURLEntities
+    uRLs.map(_.getURL).toList
+  }
 }
 
 class TweetProcessingActor(streamStorageActor: ActorRef) extends Actor{
