@@ -71,7 +71,7 @@ class StreamStorageActor extends Actor {
 
   private[this] def extractURLs(status: Status): List[String] = {
     val uRLs = status.getURLEntities
-    uRLs.map(_.getURL).toList
+    uRLs.map(_.getDisplayURL).toList
   }
 }
 
