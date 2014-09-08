@@ -28,8 +28,8 @@ class StreamStorageActor extends Actor {
   private[this] var topEmojis = List("")
   private[this] var percentEmojis = 0
   private[this] var topHashtags = List("")
-  private[this] var percentUrlTweets = 0
-  private[this] var percentPhotoTweets = 0
+  private[this] var totalUrlTweets = 0
+  private[this] var totalPicTweets = 0
   private[this] var topDomains = List("")
 
   def receive = {
@@ -54,7 +54,14 @@ class StreamStorageActor extends Actor {
       totalTweets -= 2100000000
       bigTotalTweets += 1
     } else {totalTweets += 1}
-    println(status.getText)
+    val maybeUrlTweets = extractURLs(status)
+    updateUrlTweets(maybeUrlTweets)
+  }
+
+  private[this] def updateUrlTweets(urlTweets: List[String]): Unit = {
+    totalUrlTweets += urlTweets.length
+    val picTweets = urlTweets.map(e => if (e.contains("instagram") || (e.contains("pic.twitter"))) e)
+    totalPicTweets += picTweets.length
   }
 
   private[this] def extractURLs(status: Status): List[String] = {
@@ -63,7 +70,7 @@ class StreamStorageActor extends Actor {
   }
 }
 
-class TweetProcessingActor(streamStorageActor: ActorRef) extends Actor{
+class TweetProcessingActor(streamStorageActor: ActorRef) extends Actor {
   def receive = {
     case e: Status => streamStorageActor ! IncomingTweet(e)
   }
