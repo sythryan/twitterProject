@@ -35,8 +35,13 @@ class StreamStorageActor extends Actor {
   def receive = {
     case e: IncomingTweet => update(e.status)
     case Recieved => future(
-      "Total: " + bigTotalTweets + totalTweets + "\n" +
-      "Average hour/minute/second: " + tweetAvgHour + "/" + tweetAvgMinute + "/" + tweetAvgSecond + "\n"
+      "===================================================================\n" +
+      "| Running Time: " + runLength + " seconds\n" +
+      "| Total: " + bigTotalTweets + totalTweets + "\n" +
+      "| Average hour/minute/second: " + tweetAvgHour + "/" + tweetAvgMinute + "/" + tweetAvgSecond + "\n" +
+      "| Total Url Tweets: " + totalUrlTweets + "\n" +
+      "| Total Picture Tweets: " + totalPicTweets + "\n" +
+      "-------------------------------------------------------------------\n"
     ).onComplete {
       case Success(x) => println(x)
       case Failure(x) => println(x)
@@ -60,7 +65,7 @@ class StreamStorageActor extends Actor {
 
   private[this] def updateUrlTweets(urlTweets: List[String]): Unit = {
     totalUrlTweets += urlTweets.length
-    val picTweets = urlTweets.map(e => if (e.contains("instagram") || (e.contains("pic.twitter"))) e)
+    val picTweets = urlTweets.filter(e => e.contains("instagram") || (e.contains("pic.twitter")))
     totalPicTweets += picTweets.length
   }
 
