@@ -60,8 +60,8 @@ class StreamStorageActor extends Actor {
   private[this] var totalTweets = 0
   private[this] var topEmojis = List("")
   private[this] var percentEmojis = 0
-  private[this] val topHashtags = mutable.MutableList("", "", "")
-  private[this] var allHashtagsAndCounts: mutable.Map[String, Int] = mutable.Map()
+  private[this] var topHashtags = List(" ", " ", " ")
+  private[this] var allHashtagsAndCounts: mutable.Map[String, Int] = mutable.Map((" ", 0))
   private[this] var totalUrlTweets = 0.0
   private[this] var totalPicTweets = 0.0
   private[this] var topDomains = List("")
@@ -72,9 +72,14 @@ class StreamStorageActor extends Actor {
     updateHashtags(extractURLs(status))
   }
 
-  private[this] def updateTopHashtags(hashtag: String): Unit = {
-    topHashtags(Random.nextInt(topHashtags.length)) = hashtag
-  }
+  // private[this] def updateTopHashtags(hashtag: String): Unit = if (!topHashtags.contains(hashtag)) {
+  //   hashtag match {
+  //     case e if(allHashtagsAndCounts(hashtag) > allHashtagsAndCounts(topHashtags(0))) => topHashtags(0) = hashtag
+  //     case e if(allHashtagsAndCounts(hashtag) > allHashtagsAndCounts(topHashtags(1))) => topHashtags(1) = hashtag
+  //     case e if(allHashtagsAndCounts(hashtag) > allHashtagsAndCounts(topHashtags(2))) => topHashtags(2) = hashtag
+  //     case _ => Nil
+  //   }
+  // }
 
   private[this] def updateHashtags(maybeHashtags: List[String]): Unit = {
     val keys = allHashtagsAndCounts.keys
@@ -84,9 +89,19 @@ class StreamStorageActor extends Actor {
       } else {
         allHashtagsAndCounts += (hashtag -> 1)
       }
-      updateTopHashtags(hashtag)
+      topHashtags = mostPopular(hashtag, topHashtags, allHashtagsAndCounts)
     }
   }
+
+
+  private[this] def mostPopular(x: String, xs: List[String], scores: mutable.Map[String, Int]): List[String] = if (!xs.contains(x)) {
+    x match {
+      case e if(scores(e) > scores(xs(0))) => List(e, xs(1), xs(2))
+      case e if(scores(e) > scores(xs(1))) => List(xs(0), e, xs(2)) 
+      case e if(scores(e) > scores(xs(2))) => List(xs(0), xs(1), e)
+      case _ => xs
+    }
+  } else xs
 
   private[this] def updateUrlTweets(urlTweets: List[String]): Unit = {
     totalUrlTweets += urlTweets.length
@@ -104,3 +119,28 @@ class StreamStorageActor extends Actor {
     hashtags.map(_.getText).toList
   }
 }
+
+//   private[this] def updateUrlTweets(urlTweets: List[String]): Unit = urlTweets.foreach{ url =>
+//     // if (allDomainsAndCount.keys.exists(_ == url)) {
+//     //   allDomainsAndCount(url) += 1
+//     // } else {
+//     //   allDomainsAndCount += (url -> 1)
+//     // } 
+//     topDomains = mostPopular(extractDomain(url), topDomains, allDomainsAndCount)
+//     totalUrlTweets += 1
+//     if (url.contains("instagram") || (url.contains("pic.twitter")))
+//       totalPicTweets += 1
+//   }
+
+//   private[this] def extractDomain(url: String): String = url.takeWhile(_!='/')
+
+//   private[this] def extractURLs(status: Status): List[String] = {
+//     val uRLs = status.getURLEntities
+//     uRLs.map(_.getDisplayURL).toList
+//   }
+
+//   private[this] def extractHashtags(status: Status): List[String] = {
+//     val hashtags = status.getHashtagEntities
+//     hashtags.map(_.getText).toList
+//   }
+// }
