@@ -64,22 +64,14 @@ class StreamStorageActor extends Actor {
   private[this] var allHashtagsAndCounts: mutable.Map[String, Int] = mutable.Map((" ", 0))
   private[this] var totalUrlTweets = 0.0
   private[this] var totalPicTweets = 0.0
-  private[this] var topDomains = List("")
+  private[this] var topDomains = List(" ", " ", " ")
+  private[this] var allDomainsAndCount: mutable.Map[String, Int] = mutable.Map((" ", 0))
 
   private[this] def update(status: Status): Unit = {
     totalTweets += 1 
     updateUrlTweets(extractURLs(status))
     updateHashtags(extractURLs(status))
   }
-
-  // private[this] def updateTopHashtags(hashtag: String): Unit = if (!topHashtags.contains(hashtag)) {
-  //   hashtag match {
-  //     case e if(allHashtagsAndCounts(hashtag) > allHashtagsAndCounts(topHashtags(0))) => topHashtags(0) = hashtag
-  //     case e if(allHashtagsAndCounts(hashtag) > allHashtagsAndCounts(topHashtags(1))) => topHashtags(1) = hashtag
-  //     case e if(allHashtagsAndCounts(hashtag) > allHashtagsAndCounts(topHashtags(2))) => topHashtags(2) = hashtag
-  //     case _ => Nil
-  //   }
-  // }
 
   private[this] def updateHashtags(maybeHashtags: List[String]): Unit = {
     val keys = allHashtagsAndCounts.keys
@@ -93,7 +85,6 @@ class StreamStorageActor extends Actor {
     }
   }
 
-
   private[this] def mostPopular(x: String, xs: List[String], scores: mutable.Map[String, Int]): List[String] = if (!xs.contains(x)) {
     x match {
       case e if(scores(e) > scores(xs(0))) => List(e, xs(1), xs(2))
@@ -104,6 +95,15 @@ class StreamStorageActor extends Actor {
   } else xs
 
   private[this] def updateUrlTweets(urlTweets: List[String]): Unit = {
+    val keys = allDomainsAndCount.keys
+    urlTweets.foreach{url => 
+      if (keys.exists(_ == url)) {
+        allDomainsAndCount(url) += 1
+      } else {
+        allDomainsAndCount += (url -> 1)
+      } 
+      // topDomains = mostPopular(extractDomain(url), topDomains, allDomainsAndCount)
+    }
     totalUrlTweets += urlTweets.length
     val picTweets = urlTweets.filter(e => e.contains("instagram") || (e.contains("pic.twitter")))
     totalPicTweets += picTweets.length
@@ -118,29 +118,6 @@ class StreamStorageActor extends Actor {
     val hashtags = status.getHashtagEntities
     hashtags.map(_.getText).toList
   }
+
+  private[this] def extractDomain(url: String): String = url.takeWhile(_!='/')
 }
-
-//   private[this] def updateUrlTweets(urlTweets: List[String]): Unit = urlTweets.foreach{ url =>
-//     // if (allDomainsAndCount.keys.exists(_ == url)) {
-//     //   allDomainsAndCount(url) += 1
-//     // } else {
-//     //   allDomainsAndCount += (url -> 1)
-//     // } 
-//     topDomains = mostPopular(extractDomain(url), topDomains, allDomainsAndCount)
-//     totalUrlTweets += 1
-//     if (url.contains("instagram") || (url.contains("pic.twitter")))
-//       totalPicTweets += 1
-//   }
-
-//   private[this] def extractDomain(url: String): String = url.takeWhile(_!='/')
-
-//   private[this] def extractURLs(status: Status): List[String] = {
-//     val uRLs = status.getURLEntities
-//     uRLs.map(_.getDisplayURL).toList
-//   }
-
-//   private[this] def extractHashtags(status: Status): List[String] = {
-//     val hashtags = status.getHashtagEntities
-//     hashtags.map(_.getText).toList
-//   }
-// }
