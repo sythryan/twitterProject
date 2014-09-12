@@ -41,7 +41,8 @@ class StreamStorageActor extends Actor {
       "| Average hour/minute/second: " + tweetAvgHour + "/" + tweetAvgMinute + "/" + tweetAvgSecond + "\n" +
       "| Percent Url Tweets: " + percentFormat.format(totalUrlTweets / totalTweets) + "%\n" +
       "| Percent Picture Tweets: " + percentFormat.format(totalPicTweets / totalTweets) + "%\n" +
-      "| Top hashtags: " + topHashtags(0) + ", " + topHashtags(1) + ", " + topHashtags(2) + "\n" +
+      "| Top Hashtags: " + topHashtags(0) + ", " + topHashtags(1) + ", " + topHashtags(2) + "\n" +
+      "| Top Domains: " + topDomains(0) + ", " + topDomains(1) + ", " + topDomains(2) + "\n" +
       "-------------------------------------------------------------------\n"
     ).onComplete {
       case Success(x) => println(x)
@@ -97,12 +98,13 @@ class StreamStorageActor extends Actor {
   private[this] def updateUrlTweets(urlTweets: List[String]): Unit = {
     val keys = allDomainsAndCount.keys
     urlTweets.foreach{url => 
-      if (keys.exists(_ == url)) {
-        allDomainsAndCount(url) += 1
+      val domainUrl = extractDomain(url)
+      if (keys.exists(_ == domainUrl)) {
+        allDomainsAndCount(domainUrl) += 1
       } else {
-        allDomainsAndCount += (url -> 1)
+        allDomainsAndCount += (domainUrl -> 1)
       } 
-      // topDomains = mostPopular(extractDomain(url), topDomains, allDomainsAndCount)
+      topDomains = mostPopular(domainUrl, topDomains, allDomainsAndCount)
     }
     totalUrlTweets += urlTweets.length
     val picTweets = urlTweets.filter(e => e.contains("instagram") || (e.contains("pic.twitter")))
