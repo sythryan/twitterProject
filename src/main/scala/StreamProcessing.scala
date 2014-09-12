@@ -74,12 +74,18 @@ class StreamStorageActor extends Actor {
     updateHashtags(extractURLs(status))
   }
 
-  private[this] def updateHashtags(maybeHashtags: List[String]): Unit = {
-    val keys = allHashtagsAndCounts.keys
-    maybeHashtags.foreach{ hashtag =>
-      allHashtagsAndCounts = updatedScores(hashtag, allHashtagsAndCounts)
-      topHashtags = mostPopular(hashtag, topHashtags, allHashtagsAndCounts)
-    }
+  private[this] def updateUrlTweets(urlTweets: List[String]): Unit = urlTweets.foreach{ url => 
+    val domainUrl = extractDomain(url)
+    allDomainsAndCount = updatedScores(domainUrl, allDomainsAndCount)
+    topDomains = mostPopular(domainUrl, topDomains, allDomainsAndCount)
+    totalUrlTweets += 1
+    if (url.contains("instagram") || (url.contains("pic.twitter")))
+      totalPicTweets += 1
+  }
+
+  private[this] def updateHashtags(maybeHashtags: List[String]): Unit = maybeHashtags.foreach{ hashtag =>
+    allHashtagsAndCounts = updatedScores(hashtag, allHashtagsAndCounts)
+    topHashtags = mostPopular(hashtag, topHashtags, allHashtagsAndCounts)
   }
 
   private[this] def mostPopular(x: String, xs: List[String], scores: Map[String, Int]): List[String] = if (!xs.contains(x)) {
@@ -91,7 +97,7 @@ class StreamStorageActor extends Actor {
     }
   } else xs
 
-  private[this] def updatedScores(elem: String, scores: Map[String, Int]): Map[String, Int] = {
+  private[this] def updatedScores(elem: String, scores: Map[String, Int]): Map[String, Int] =
     if (scores.keys.exists(_ == elem)) {
       val newPair = (elem -> (scores(elem) + 1))
       val newScores = scores - elem
@@ -99,19 +105,6 @@ class StreamStorageActor extends Actor {
     } else {
       scores + (elem -> 1)
     } 
-  }
-
-  private[this] def updateUrlTweets(urlTweets: List[String]): Unit = {
-    val keys = allDomainsAndCount.keys
-    urlTweets.foreach{ url => 
-      val domainUrl = extractDomain(url)
-      allDomainsAndCount = updatedScores(domainUrl, allDomainsAndCount)
-      topDomains = mostPopular(domainUrl, topDomains, allDomainsAndCount)
-    }
-    totalUrlTweets += urlTweets.length
-    val picTweets = urlTweets.filter(e => e.contains("instagram") || (e.contains("pic.twitter")))
-    totalPicTweets += picTweets.length
-  }
 
   private[this] def extractURLs(status: Status): List[String] = {
     val uRLs = status.getURLEntities
