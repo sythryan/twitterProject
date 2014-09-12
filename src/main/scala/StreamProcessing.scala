@@ -77,11 +77,7 @@ class StreamStorageActor extends Actor {
   private[this] def updateHashtags(maybeHashtags: List[String]): Unit = {
     val keys = allHashtagsAndCounts.keys
     maybeHashtags.foreach{ hashtag =>
-      if (keys.exists(_ == hashtag)) {
-        allHashtagsAndCounts(hashtag) += 1
-      } else {
-        allHashtagsAndCounts += (hashtag -> 1)
-      }
+      allHashtagsAndCounts = updatedScores(hashtag, allHashtagsAndCounts)
       topHashtags = mostPopular(hashtag, topHashtags, allHashtagsAndCounts)
     }
   }
@@ -95,15 +91,20 @@ class StreamStorageActor extends Actor {
     }
   } else xs
 
+  private[this] def updatedScores(elem: String, scores: mutable.Map[String, Int]): mutable.Map[String, Int] = {
+    if (scores.keys.exists(_ == elem)) {
+      scores(elem) += 1
+    } else {
+      scores(elem) = 1
+    } 
+    scores
+  }
+
   private[this] def updateUrlTweets(urlTweets: List[String]): Unit = {
     val keys = allDomainsAndCount.keys
-    urlTweets.foreach{url => 
+    urlTweets.foreach{ url => 
       val domainUrl = extractDomain(url)
-      if (keys.exists(_ == domainUrl)) {
-        allDomainsAndCount(domainUrl) += 1
-      } else {
-        allDomainsAndCount += (domainUrl -> 1)
-      } 
+      allDomainsAndCount = updatedScores(domainUrl, allDomainsAndCount)
       topDomains = mostPopular(domainUrl, topDomains, allDomainsAndCount)
     }
     totalUrlTweets += urlTweets.length
