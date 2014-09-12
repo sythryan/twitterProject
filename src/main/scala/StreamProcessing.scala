@@ -62,11 +62,11 @@ class StreamStorageActor extends Actor {
   private[this] var topEmojis = List("")
   private[this] var percentEmojis = 0
   private[this] var topHashtags = List(" ", " ", " ")
-  private[this] var allHashtagsAndCounts: mutable.Map[String, Int] = mutable.Map((" ", 0))
+  private[this] var allHashtagsAndCounts = Map((" ", 0))
   private[this] var totalUrlTweets = 0.0
   private[this] var totalPicTweets = 0.0
   private[this] var topDomains = List(" ", " ", " ")
-  private[this] var allDomainsAndCount: mutable.Map[String, Int] = mutable.Map((" ", 0))
+  private[this] var allDomainsAndCount = Map((" ", 0))
 
   private[this] def update(status: Status): Unit = {
     totalTweets += 1 
@@ -82,7 +82,7 @@ class StreamStorageActor extends Actor {
     }
   }
 
-  private[this] def mostPopular(x: String, xs: List[String], scores: mutable.Map[String, Int]): List[String] = if (!xs.contains(x)) {
+  private[this] def mostPopular(x: String, xs: List[String], scores: Map[String, Int]): List[String] = if (!xs.contains(x)) {
     x match {
       case e if(scores(e) > scores(xs(0))) => List(e, xs(1), xs(2))
       case e if(scores(e) > scores(xs(1))) => List(xs(0), e, xs(2)) 
@@ -91,13 +91,14 @@ class StreamStorageActor extends Actor {
     }
   } else xs
 
-  private[this] def updatedScores(elem: String, scores: mutable.Map[String, Int]): mutable.Map[String, Int] = {
+  private[this] def updatedScores(elem: String, scores: Map[String, Int]): Map[String, Int] = {
     if (scores.keys.exists(_ == elem)) {
-      scores(elem) += 1
+      val newPair = (elem -> (scores(elem) + 1))
+      val newScores = scores - elem
+      newScores + newPair
     } else {
-      scores(elem) = 1
+      scores + (elem -> 1)
     } 
-    scores
   }
 
   private[this] def updateUrlTweets(urlTweets: List[String]): Unit = {
