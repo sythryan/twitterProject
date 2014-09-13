@@ -41,8 +41,11 @@ class StreamStorageActor extends Actor {
       "| Average hour/minute/second: " + tweetAvgHour + "/" + tweetAvgMinute + "/" + tweetAvgSecond + "\n" +
       "| Percent Url Tweets: " + percentFormat.format(totalUrlTweets / totalTweets) + "%\n" +
       "| Percent Picture Tweets: " + percentFormat.format(totalPicTweets / totalTweets) + "%\n" +
-      "| Top Hashtags: " + topHashtags(0) + ", " + topHashtags(1) + ", " + topHashtags(2) + "\n" +
       "| Top Domains: " + topDomains(0) + ", " + topDomains(1) + ", " + topDomains(2) + "\n" +
+      "| Top Hashtags: " + topHashtags(0) + ", " + topHashtags(1) + ", " + topHashtags(2) + "\n" +
+      "| Top Emojis: " + topEmojis(0) + ", " + topEmojis(1) + ", " + topEmojis(2) + "\n" +
+      "| Percent Emoji Tweets:  " + percentFormat.format(totalEmojis / totalTweets) + "%\n" +
+      "| " + totalEmojis + " \n" + 
       "-------------------------------------------------------------------\n"
     ).onComplete {
       case Success(x) => println(x)
@@ -50,7 +53,7 @@ class StreamStorageActor extends Actor {
     }
   }
 
-  val percentFormat = new DecimalFormat("#.00")
+  val percentFormat = new DecimalFormat("#.0000")
 
   val startTime = System.currentTimeMillis / 1000
   def runLength = System.currentTimeMillis / 1000 - startTime
@@ -59,8 +62,9 @@ class StreamStorageActor extends Actor {
   def tweetAvgHour   = (totalTweets / (runLength / 3600.0)).toInt
 
   private[this] var totalTweets = 0
-  private[this] var topEmojis = List("")
-  private[this] var percentEmojis = 0
+  private[this] var topEmojis = List(" ", " ", " ")
+  private[this] var totalEmojis = 0
+  private[this] var allEmojisAndCounts = Map((" ", 0))
   private[this] var topHashtags = List(" ", " ", " ")
   private[this] var allHashtagsAndCounts = Map((" ", 0))
   private[this] var totalUrlTweets = 0.0
@@ -72,6 +76,7 @@ class StreamStorageActor extends Actor {
     totalTweets += 1 
     updateUrlTweets(extractURLs(status))
     updateHashtags(extractURLs(status))
+    updateEmojis(extractEmojis(status))
   }
 
   private[this] def updateUrlTweets(urlTweets: List[String]): Unit = urlTweets.foreach{ url => 
@@ -86,6 +91,12 @@ class StreamStorageActor extends Actor {
   private[this] def updateHashtags(maybeHashtags: List[String]): Unit = maybeHashtags.foreach{ hashtag =>
     allHashtagsAndCounts = updatedScores(hashtag, allHashtagsAndCounts)
     topHashtags = mostPopular(hashtag, topHashtags, allHashtagsAndCounts)
+  }
+
+  private[this] def updateEmojis(emojis: List[String]): Unit = emojis.foreach { emoji =>
+    totalEmojis += 1
+    allEmojisAndCounts = updatedScores(emoji, allEmojisAndCounts)
+    topEmojis = mostPopular(emoji, topEmojis, allEmojisAndCounts)
   }
 
   private[this] def mostPopular(x: String, xs: List[String], scores: Map[String, Int]): List[String] = if (!xs.contains(x)) {
@@ -115,6 +126,8 @@ class StreamStorageActor extends Actor {
     val hashtags = status.getHashtagEntities
     hashtags.map(_.getText).toList
   }
+
+  private[this] def extractEmojis(status: Status): List[String] = "[^\u0000-\uFFFF]".r.findAllIn(status.getText).toList
 
   private[this] def extractDomain(url: String): String = url.takeWhile(_!='/')
 }
