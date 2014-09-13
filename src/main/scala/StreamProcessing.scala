@@ -8,18 +8,6 @@ import scala.util.{Failure, Success, Random}
 import java.text.DecimalFormat
 import scala.collection.mutable
 
-// ● Total number of tweets received
-// ● Average tweets per hour/minute/second
-// ● Top emojis in tweets
-// ● Percent of tweets that contains emojis
-// ● Top hashtags
-// ● Percent of tweets that contain a url
-// ● Percent of tweets that contain a photo url (pic.twitter.com or instagram)
-// ● Top domains of urls in tweets
-
-case object Recieved
-case class IncomingTweet(status: Status)
-
 class Extractor(status: Status) {
   val text = status.getText
 }
@@ -39,13 +27,12 @@ class StreamStorageActor extends Actor {
       "| Running Time: " + runLength + " seconds\n" +
       "| Total: " + totalTweets + "\n" +
       "| Average hour/minute/second: " + tweetAvgHour + "/" + tweetAvgMinute + "/" + tweetAvgSecond + "\n" +
-      "| Percent Url Tweets: " + percentFormat.format(totalUrlTweets / totalTweets) + "%\n" +
-      "| Percent Picture Tweets: " + percentFormat.format(totalPicTweets / totalTweets) + "%\n" +
+      "| Percent Url Tweets: " + percentFormat.format(totalUrlTweets / totalTweets * 100) + "%\n" +
       "| Top Domains: " + topDomains(0) + ", " + topDomains(1) + ", " + topDomains(2) + "\n" +
+      "| Percent Picture Tweets: " + percentFormat.format(totalPicTweets / totalTweets * 100) + "%\n" +
       "| Top Hashtags: " + topHashtags(0) + ", " + topHashtags(1) + ", " + topHashtags(2) + "\n" +
+      "| Percent Emoji Tweets:  " + percentFormat.format(totalEmojis / totalTweets * 100) + "%\n" +
       "| Top Emojis: " + topEmojis(0) + ", " + topEmojis(1) + ", " + topEmojis(2) + "\n" +
-      "| Percent Emoji Tweets:  " + percentFormat.format(totalEmojis / totalTweets) + "%\n" +
-      "| " + totalEmojis + " \n" + 
       "-------------------------------------------------------------------\n"
     ).onComplete {
       case Success(x) => println(x)
@@ -53,7 +40,7 @@ class StreamStorageActor extends Actor {
     }
   }
 
-  val percentFormat = new DecimalFormat("#.0000")
+  val percentFormat = new DecimalFormat("#.00")
 
   val startTime = System.currentTimeMillis / 1000
   def runLength = System.currentTimeMillis / 1000 - startTime
@@ -63,7 +50,7 @@ class StreamStorageActor extends Actor {
 
   private[this] var totalTweets = 0
   private[this] var topEmojis = List(" ", " ", " ")
-  private[this] var totalEmojis = 0
+  private[this] var totalEmojis = 0.0
   private[this] var allEmojisAndCounts = Map((" ", 0))
   private[this] var topHashtags = List(" ", " ", " ")
   private[this] var allHashtagsAndCounts = Map((" ", 0))
